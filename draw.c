@@ -165,7 +165,7 @@ void draw_steep(int x0, int y0, int x1, int y1, screen s, color c) {
 }
 
 void draw_line(int x0, int y0, int x1, int y1, screen s, color c) {
-  
+
   if (x0 == x1) {
     int y;
     int dy = (y1 > y0)? 1: -1;;

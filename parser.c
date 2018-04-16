@@ -78,24 +78,21 @@ void parse_file ( char * input) {
   struct matrix *transform = new_matrix(4, 4);
   ident(transform);
 
+  int nargs = 0;
+  int ndisplay = 0;
+
   struct matrix *edges = new_matrix(4, 50);
   struct matrix *trigs = new_matrix(4, 75);
 
   screen s;
-  depthmap d;
-  int d_i, d_j;
-  for (d_i = 0; d_i < XRES; d_i++)
-    for (d_j = 0; d_j < YRES; d_j++)
-      d[d_i][d_j] = -DBL_MAX;
-  
-    
 
   FILE *f;
   char line[256], argline[256];
 
   color c = get_color(255, 255, 255);
+  color back = get_color(0, 0, 0);
   
-  clear_screen(s, get_color(0, 0, 0));
+  clear_screen(s, back);
 
   if ( strcmp(input, "stdin") == 0 ) 
     f = stdin;
@@ -109,7 +106,9 @@ void parse_file ( char * input) {
     }
     
     line[strlen(line)-1]='\0'; //remove new line
-    if (strlen(line) == 0) {
+    if (strlen(line) == 0 ||
+	line[0] == '#' ||
+	(line[0] == '/' && line[1] == '/')) {
       continue;
     }
 
@@ -118,7 +117,7 @@ void parse_file ( char * input) {
       break;
     } else if (!strcmp(line, "line")) {
       double *args = malloc(6 * sizeof(double));
-      int nargs;
+      
       if (!fgets(argline, 255, f) ||
 	  ((nargs = sscanf(argline, "%lf %lf %lf %lf %lf %lf",
 			   args, args+1, args+2, args+3, args+4, args+5)) != 6)) {
@@ -129,7 +128,7 @@ void parse_file ( char * input) {
       free(args);
     } else if (!strcmp(line, "polygon")) {
       double *args = malloc(9 * sizeof(double));
-      int nargs;
+      
       if (!fgets(argline, 255, f) ||
 	  ((nargs = sscanf(argline, "%lf %lf %lf %lf %lf %lf %lf %lf %lf",
 			   args, args+1, args+2, args+3, args+4, args+5,
@@ -141,7 +140,7 @@ void parse_file ( char * input) {
       }
     } else if (!strcmp(line, "box")) {
       double *args = malloc(6 * sizeof(double));
-      int nargs;
+      
       if (!fgets(argline, 255, f) ||
 	  ((nargs = sscanf(argline, "%lf %lf %lf %lf %lf %lf", args, args+1, args+2, args+3, args+4, args+5)) != 6)) {
 	printf("Error: 'box' requires 6 arguments of type double, found %d\n", nargs);
@@ -150,7 +149,7 @@ void parse_file ( char * input) {
       }
     } else if (!strcmp(line, "sphere")) {
       double *args = malloc(4 * sizeof(double));
-      int nargs;
+      
       if (!fgets(argline, 255, f) ||
 	  ((nargs = sscanf(argline, "%lf %lf %lf %lf", args, args+1, args+2, args+3)) != 4)) {
 	printf("Error: 'sphere' requires 4 arguments of type double, found %d\n", nargs);
@@ -159,7 +158,7 @@ void parse_file ( char * input) {
       }
     } else if (!strcmp(line, "torus")) {
       double *args = malloc(5 * sizeof(double));
-      int nargs;
+      
       if (!fgets(argline, 255, f) ||
 	  ((nargs = sscanf(argline, "%lf %lf %lf %lf %lf", args, args+1, args+2, args+3, args+4)) != 5)) {
 	printf("Error: 'torus' requires 5 arguments of type double, found %d\n", nargs);
@@ -168,7 +167,7 @@ void parse_file ( char * input) {
       }
     } else if (!strcmp(line, "circle")) {
       double *args = malloc(4 * sizeof(double));
-      int nargs;
+      
       if (!fgets(argline, 255, f) ||
 	  ((nargs = sscanf(argline, "%lf %lf %lf %lf", args, args+1, args+2, args+3)) != 4)) {
 	printf("Error: 'circle' requires 4 arguments of type double, found %d\n", nargs);
@@ -177,7 +176,7 @@ void parse_file ( char * input) {
       }
     } else if (!strcmp(line, "bezier")) {
       double *args = malloc(8 * sizeof(double));
-      int nargs;
+      
       if (!fgets(argline, 255, f) ||
 	  ((nargs = sscanf(argline, "%lf %lf %lf %lf %lf %lf %lf %lf",
 			   args, args+1, args+2, args+3, args+4, args+5,
@@ -189,7 +188,7 @@ void parse_file ( char * input) {
       }
     } else if (!strcmp(line, "hermite")) {
       double *args = malloc(8 * sizeof(double));
-      int nargs;
+      
       if (!fgets(argline, 255, f) ||
 	  ((nargs = sscanf(argline, "%lf %lf %lf %lf %lf %lf %lf %lf",
 			   args, args+1, args+2, args+3, args+4, args+5,
@@ -203,7 +202,7 @@ void parse_file ( char * input) {
       ident(transform);
     } else if (!strcmp(line, "scale")) {
       double *args = malloc(3 * sizeof(double));
-      int nargs;
+      
       if (!fgets(argline, 255, f) ||
 	  ((nargs = sscanf(argline, "%lf %lf %lf", args, args+1, args+2)) != 3)) {
 	printf("Error: 'scale' requires 3 arguments of type double, found %d\n", nargs);
@@ -213,9 +212,9 @@ void parse_file ( char * input) {
       
       free(args);
       
-    } else if (!strcmp(line, "translate")) {
+    } else if (!strcmp(line, "translate") || !strcmp(line, "move")) {
       double *args = malloc(3 * sizeof(double));
-      int nargs;
+      
       if (!fgets(argline, 255, f) ||
 	  ((nargs = sscanf(argline, "%lf %lf %lf", args, args+1, args+2)) != 3)) {
 	printf("Error: 'translate' requires 3 arguments of type double, found %d\n", nargs);
@@ -253,7 +252,7 @@ void parse_file ( char * input) {
       if (!fgets(argline, 255, f) || (sscanf(argline, "%d %d %d", rgb, rgb+1, rgb+2) != 3)) {
 	printf("Error: 'background' requires three integeres\n");
       } else {
-	clear_screen(s, get_color(rgb[0], rgb[1], rgb[2]));
+	back = get_color(rgb[0], rgb[1], rgb[2]);
       }
     } else if (!strcmp(line, "apply")) {
       edges = matrix_mult(transform, edges);
@@ -264,7 +263,18 @@ void parse_file ( char * input) {
     } else if (!strcmp(line, "draw")) {
       draw_lines(edges, s, c);
       draw_polygons(trigs, s, c);
+    } else if (!strcmp(line, "display")) {
+      clear_screen(s, back);
+      draw_lines(edges, s, c);
+      draw_polygons(trigs, s, c);
+
+      char *filename = malloc(16);
+      sprintf(filename, "display-%d.png", ndisplay++);
+      save_extension(s, filename);
+      free(filename);
     } else if (!strcmp(line, "save")) {
+      clear_screen(s, back);
+      
       draw_lines(edges, s, c);
       draw_polygons(trigs, s, c);
       
